@@ -1,5 +1,5 @@
 ﻿import { create } from 'zustand';
-import { clearToken, getToken, requestOtp, verifyOtp } from '../services/api';
+import { clearToken, getToken, requestOtp, signInWithGoogle, verifyOtp } from '../services/api';
 
 type AuthState = {
   token: string | null;
@@ -11,6 +11,7 @@ type AuthState = {
   setPhone: (phone: string) => void;
   sendOtp: () => Promise<void>;
   verify: (code: string) => Promise<void>;
+  googleSignIn: (idToken: string) => Promise<void>;
   logout: () => Promise<void>;
 };
 
@@ -43,6 +44,18 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       set({ token: result.token });
     } catch (error) {
       set({ error: error instanceof Error ? error.message : 'Invalid code' });
+      throw error;
+    } finally {
+      set({ loading: false });
+    }
+  },
+  googleSignIn: async (idToken) => {
+    set({ loading: true, error: null });
+    try {
+      const result = await signInWithGoogle(idToken);
+      set({ token: result.token });
+    } catch (error) {
+      set({ error: error instanceof Error ? error.message : 'Google sign-in failed' });
       throw error;
     } finally {
       set({ loading: false });

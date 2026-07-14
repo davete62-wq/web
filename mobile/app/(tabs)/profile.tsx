@@ -100,6 +100,19 @@ export default function ProfileScreen() {
             <Choice active={form.sex === 'female'} label="Female" onPress={() => setField('sex', 'female')} />
           </View>
 
+          <Text className="mt-5 font-poppinsSemi text-sm text-ink">Activity level</Text>
+          <View className="mt-2 gap-2">
+            <View className="flex-row gap-2">
+              <Choice active={form.activityLevel === 'sedentary'} label="Low" onPress={() => setField('activityLevel', 'sedentary')} />
+              <Choice active={form.activityLevel === 'light'} label="Light" onPress={() => setField('activityLevel', 'light')} />
+              <Choice active={form.activityLevel === 'moderate'} label="Moderate" onPress={() => setField('activityLevel', 'moderate')} />
+            </View>
+            <View className="flex-row gap-2">
+              <Choice active={form.activityLevel === 'very_active'} label="Very active" onPress={() => setField('activityLevel', 'very_active')} />
+              <Choice active={form.activityLevel === 'athlete'} label="Athlete" onPress={() => setField('activityLevel', 'athlete')} />
+            </View>
+          </View>
+
           <Text className="mt-5 font-poppinsSemi text-sm text-ink">Meals and budget</Text>
           <NumberField label="Meals per day" value={form.mealsPerDay} onChange={(value) => setField('mealsPerDay', value)} />
           <NumberField label="Water glasses per day" value={form.waterGlassesPerDay} onChange={(value) => setField('waterGlassesPerDay', value)} />

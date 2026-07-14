@@ -77,6 +77,18 @@ export async function verifyOtp(phone: string, code: string) {
   return { ...data, token };
 }
 
+export async function signInWithGoogle(idToken: string) {
+  const data = await apiFetch<{ token?: string; jwt?: string; user?: unknown }>('/auth/google', {
+    method: 'POST',
+    auth: false,
+    body: JSON.stringify({ idToken })
+  });
+  const token = data.token ?? data.jwt;
+  if (!token) throw new Error('Google sign-in succeeded but no token was returned');
+  await saveToken(token);
+  return { ...data, token };
+}
+
 export async function fetchDietPlan() {
   return apiFetch<any>('/meal-plans/today');
 }
@@ -90,6 +102,18 @@ export async function createDietPlan(profile: Record<string, unknown>) {
 
 export async function fetchProfile() {
   return apiFetch<any>('/profile');
+}
+
+export function hasCompletedProfile(data: any) {
+  const profile = data?.profile;
+  return !!(
+    profile?.age &&
+    profile?.heightCm &&
+    profile?.weightKg &&
+    profile?.goalWeightKg &&
+    profile?.sex &&
+    profile?.preferences?.mealsPerDay
+  );
 }
 
 export async function saveProfile(profile: Record<string, unknown>) {

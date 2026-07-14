@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from 'react';
 import { ImageBackground, Text, TextInput, View } from 'react-native';
 import Animated, { FadeInDown, useAnimatedStyle, useSharedValue, withRepeat, withTiming } from 'react-native-reanimated';
 import ScaleButton from '../components/ScaleButton';
+import { fetchProfile, hasCompletedProfile } from '../services/api';
 import { useAuthStore } from '../store/auth';
 
 export default function VerifyScreen() {
@@ -30,7 +31,12 @@ export default function VerifyScreen() {
     spin.value = withRepeat(withTiming(360, { duration: 900 }), -1, false);
     try {
       await verify(code);
-      router.replace('/(tabs)/diet');
+      try {
+        const profile = await fetchProfile();
+        router.replace(hasCompletedProfile(profile) ? '/(tabs)/diet' : '/(tabs)/profile');
+      } catch {
+        router.replace('/(tabs)/profile');
+      }
     } catch {
       setLocalError('Invalid Code');
       spin.value = 0;

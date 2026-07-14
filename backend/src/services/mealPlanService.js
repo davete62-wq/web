@@ -32,7 +32,8 @@ function buildMeal(name, targetCalories, foods, usedIds, preferredGroups) {
     const food = pickClosest(foods, targetCalories * portion, usedIds, preferredGroups);
     if (!food) break;
     usedIds.add(food.id);
-    const servingGrams = Math.max(60, Math.round((targetCalories * portion / Number(food.energy_kcal)) * 100));
+    const foodCalories = Math.max(1, Number(food.energy_kcal));
+    const servingGrams = Math.max(60, Math.round((targetCalories * portion / foodCalories) * 100));
     calories += Number(food.energy_kcal) * servingGrams / 100;
     selected.push({
       foodId: food.id,
@@ -55,10 +56,12 @@ function buildMeal(name, targetCalories, foods, usedIds, preferredGroups) {
   };
 }
 
-export async function generateMealPlan({ targetCalories, allergies, medicalConditions, preferences = {} }) {
+export async function generateMealPlan({ targetCalories, allergies, medicalConditions, preferences = {}, profile = {} }) {
   const foods = await findFoodsForMealPlan({ targetCalories, allergies, medicalConditions });
-  if (foods.length < 8) {
-    throw new Error('Food data seed is too small to generate a compliant meal plan');
+  if (foods.length === 0) {
+    const error = new Error('No EFCT foods matched this profile. Check food seed data and allergy filters.');
+    error.statusCode = 404;
+    throw error;
   }
 
   const usedIds = new Set();
@@ -84,5 +87,5 @@ export async function generateMealPlan({ targetCalories, allergies, medicalCondi
     dailyCalories: Object.values(meals).reduce((sum, meal) => sum + meal.calories, 0)
   };
 
-  return polishMealPlanWithLlm(plan);
+  return polishMealPlanWithLlm(plan, profile);
 }

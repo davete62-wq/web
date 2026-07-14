@@ -17,6 +17,7 @@ function normalizeMeals(data: any): FoodItem[] {
   const list = Array.isArray(source) ? source : Object.values(source);
   return list.flatMap((meal: any) => {
     const items = meal?.items ?? [meal];
+    const prepSteps = Array.isArray(meal?.prepSteps) ? meal.prepSteps : [];
     return items.map((item: any, index: number) => ({
       id: item.id ?? item.foodId ?? `${meal.name ?? 'meal'}-${index}`,
       name: item.name ?? item.food_name ?? meal.name ?? 'TenaFit meal',
@@ -28,7 +29,7 @@ function normalizeMeals(data: any): FoodItem[] {
       fat: Number(item.fat ?? 0),
       servingGrams: Number(item.servingGrams ?? item.serving_grams ?? 100),
       ingredients: item.ingredients,
-      recipe: item.recipe ?? meal.notes
+      recipe: prepSteps.find((step: any) => String(step.foodId) === String(item.foodId))?.instructions ?? item.recipe ?? meal.notes
     }));
   });
 }

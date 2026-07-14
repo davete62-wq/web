@@ -20,7 +20,7 @@ app.use('/profile', profileRoutes);
 app.use('/meal-plans', mealPlanRoutes);
 
 app.use((error, _req, res, _next) => {
-  const status = error.message === 'Profile not found' ? 404 : 500;
+  const status = error.statusCode ?? (error.message === 'Profile not found' ? 404 : 500);
   if (env.nodeEnv !== 'production') console.error(error);
   res.status(status).json({ error: status === 500 ? 'Internal server error' : error.message });
 });

@@ -9,7 +9,13 @@ mealPlanRoutes.use(requireAuth);
 async function createTodayMealPlan(req, res, next) {
   try {
     const profileResult = await query(
-      `SELECT app_private.decrypt_text(target_calories_encrypted)::int AS "targetCalories",
+      `SELECT activity_level AS "activityLevel",
+              app_private.decrypt_text(age_encrypted)::int AS age,
+              app_private.decrypt_text(height_cm_encrypted)::numeric AS "heightCm",
+              app_private.decrypt_text(weight_kg_encrypted)::numeric AS "weightKg",
+              app_private.decrypt_text(goal_weight_kg_encrypted)::numeric AS "goalWeightKg",
+              app_private.decrypt_text(sex_encrypted) AS sex,
+              app_private.decrypt_text(target_calories_encrypted)::int AS "targetCalories",
               app_private.decrypt_text(medical_conditions_encrypted)::jsonb AS "medicalConditions",
               app_private.decrypt_text(allergies_encrypted)::jsonb AS allergies,
               COALESCE(app_private.decrypt_text(preferences_encrypted)::jsonb, '{}'::jsonb) AS preferences
@@ -25,7 +31,8 @@ async function createTodayMealPlan(req, res, next) {
       targetCalories: profile.targetCalories,
       allergies: profile.allergies,
       medicalConditions: profile.medicalConditions,
-      preferences: profile.preferences
+      preferences: profile.preferences,
+      profile
     });
 
     const streakResult = await query(
