@@ -57,7 +57,7 @@ function normalizePhone(phone: string) {
 
 export async function requestOtp(phone: string) {
   const normalizedPhone = normalizePhone(phone);
-  return apiFetch<{ ok?: boolean; message?: string; requestId?: string }>('/auth/request-otp', {
+  return apiFetch<{ status?: string; ok?: boolean; message?: string; requestId?: string }>('/auth/phone/start', {
     method: 'POST',
     auth: false,
     body: JSON.stringify({ phone: normalizedPhone })
@@ -66,7 +66,7 @@ export async function requestOtp(phone: string) {
 
 export async function verifyOtp(phone: string, code: string) {
   const normalizedPhone = normalizePhone(phone);
-  const data = await apiFetch<{ token?: string; jwt?: string; user?: unknown }>('/auth/verify-otp', {
+  const data = await apiFetch<{ token?: string; jwt?: string; user?: unknown }>('/auth/phone/verify', {
     method: 'POST',
     auth: false,
     body: JSON.stringify({ phone: normalizedPhone, code })
