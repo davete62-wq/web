@@ -1,14 +1,16 @@
 {
   "cli": {
-    "version": ">= 13.0.0"
+    "version": "21.0.0"
   },
   "build": {
     "preview": {
+      "distribution": "internal",
       "env": {
         "EXPO_PUBLIC_API_URL": "https://tenafit-kewi.onrender.com"
       },
       "android": {
-        "buildType": "apk"
+        "buildType": "apk",
+        "resourceClass": "medium"
       }
     },
     "production": {
