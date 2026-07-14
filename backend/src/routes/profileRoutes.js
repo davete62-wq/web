@@ -15,7 +15,17 @@ const profileSchema = Joi.object({
   activityLevel: Joi.string().valid('sedentary', 'light', 'moderate', 'very_active', 'athlete').required(),
   goalWeightKg: Joi.number().min(25).max(300).required(),
   medicalConditions: Joi.array().items(Joi.string().max(80)).default([]),
-  allergies: Joi.array().items(Joi.string().max(80)).default([])
+  allergies: Joi.array().items(Joi.string().max(80)).default([]),
+  preferences: Joi.object({
+    goal: Joi.string().valid('lose_weight', 'gain_weight', 'maintain').default('maintain'),
+    mealsPerDay: Joi.number().integer().min(2).max(5).default(4),
+    waterGlassesPerDay: Joi.number().integer().min(1).max(20).default(8),
+    foodsLiked: Joi.array().items(Joi.string().max(80)).default([]),
+    foodsDisliked: Joi.array().items(Joi.string().max(80)).default([]),
+    monthlyFoodBudgetEtb: Joi.number().min(0).max(1000000).allow(null).default(null),
+    cookingSkill: Joi.string().valid('beginner', 'intermediate', 'advanced').default('beginner'),
+    allergyOtherText: Joi.string().max(240).allow('').default('')
+  }).default()
 });
 
 profileRoutes.put('/', async (req, res, next) => {
@@ -27,13 +37,14 @@ profileRoutes.put('/', async (req, res, next) => {
       `INSERT INTO user_profiles (
          user_id, age_encrypted, height_cm_encrypted, weight_kg_encrypted, activity_level,
          goal_weight_kg_encrypted, target_calories_encrypted, medical_conditions_encrypted,
-         allergies_encrypted, sex_encrypted
+         allergies_encrypted, sex_encrypted, preferences_encrypted
        )
        VALUES (
          $1,
          app_private.encrypt_text($2), app_private.encrypt_text($3), app_private.encrypt_text($4), $5,
          app_private.encrypt_text($6), app_private.encrypt_text($7),
-         app_private.encrypt_text($8), app_private.encrypt_text($9), app_private.encrypt_text($10)
+         app_private.encrypt_text($8), app_private.encrypt_text($9), app_private.encrypt_text($10),
+         app_private.encrypt_text($11)
        )
        ON CONFLICT (user_id) DO UPDATE SET
          age_encrypted = EXCLUDED.age_encrypted,
@@ -44,7 +55,8 @@ profileRoutes.put('/', async (req, res, next) => {
          target_calories_encrypted = EXCLUDED.target_calories_encrypted,
          medical_conditions_encrypted = EXCLUDED.medical_conditions_encrypted,
          allergies_encrypted = EXCLUDED.allergies_encrypted,
-         sex_encrypted = EXCLUDED.sex_encrypted`,
+         sex_encrypted = EXCLUDED.sex_encrypted,
+         preferences_encrypted = EXCLUDED.preferences_encrypted`,
       [
         req.user.id,
         String(profile.age),
@@ -55,7 +67,8 @@ profileRoutes.put('/', async (req, res, next) => {
         String(needs.targetCalories),
         JSON.stringify(profile.medicalConditions),
         JSON.stringify(profile.allergies),
-        profile.sex
+        profile.sex,
+        JSON.stringify(profile.preferences)
       ]
     );
 
@@ -76,7 +89,8 @@ profileRoutes.get('/', async (req, res, next) => {
               app_private.decrypt_text(target_calories_encrypted)::int AS "targetCalories",
               app_private.decrypt_text(medical_conditions_encrypted)::jsonb AS "medicalConditions",
               app_private.decrypt_text(allergies_encrypted)::jsonb AS allergies,
-              app_private.decrypt_text(sex_encrypted) AS sex
+              app_private.decrypt_text(sex_encrypted) AS sex,
+              COALESCE(app_private.decrypt_text(preferences_encrypted)::jsonb, '{}'::jsonb) AS preferences
          FROM user_profiles
         WHERE user_id = $1`,
       [req.user.id]

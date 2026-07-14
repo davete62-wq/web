@@ -13,6 +13,8 @@ function formatPhone(value: string) {
 }
 
 export default function LoginScreen() {
+  const token = useAuthStore((state) => state.token);
+  const hydrated = useAuthStore((state) => state.hydrated);
   const phone = useAuthStore((state) => state.phone);
   const setPhone = useAuthStore((state) => state.setPhone);
   const sendOtp = useAuthStore((state) => state.sendOtp);
@@ -22,6 +24,11 @@ export default function LoginScreen() {
   const spin = useSharedValue(0);
 
   const spinnerStyle = useAnimatedStyle(() => ({ transform: [{ rotate: `${spin.value}deg` }] }));
+
+  if (hydrated && token) {
+    router.replace('/(tabs)/diet');
+    return null;
+  }
 
   async function submit() {
     const digits = phone.replace(/[^0-9]/g, '');
@@ -59,13 +66,17 @@ export default function LoginScreen() {
             <Text className="mb-2 font-poppinsSemi text-sm text-ink">Phone number</Text>
             <View className={`flex-row items-center rounded-2xl border bg-softBeige/70 px-4 ${localError || error ? 'border-danger' : 'border-sand'}`}>
               <Ionicons name="call" size={20} color="#0284c7" />
+              <View className="ml-3 h-14 justify-center border-r border-sand pr-3">
+                <Text className="font-poppinsBold text-base text-ink">+251</Text>
+              </View>
               <TextInput
-                value={phone}
+                value={phone.replace(/^\+251\s?/, '')}
                 onChangeText={(value) => setPhone(formatPhone(value))}
                 keyboardType="phone-pad"
                 className="ml-3 h-14 flex-1 font-poppinsSemi text-base text-ink"
-                placeholder="+251"
+                placeholder="912 345 678"
                 placeholderTextColor="#94a3b8"
+                maxLength={11}
               />
             </View>
             {!!(localError || error) && <Text className="mt-2 font-poppinsSemi text-sm text-danger">{localError ?? error}</Text>}

@@ -13,7 +13,7 @@ const fallbackMeals: FoodItem[] = [
 ];
 
 function normalizeMeals(data: any): FoodItem[] {
-  const source = data?.plan_json?.meals ?? data?.meals ?? data?.items ?? [];
+  const source = data?.mealPlan?.plan_json?.meals ?? data?.plan_json?.meals ?? data?.meals ?? data?.items ?? [];
   const list = Array.isArray(source) ? source : Object.values(source);
   return list.flatMap((meal: any) => {
     const items = meal?.items ?? [meal];

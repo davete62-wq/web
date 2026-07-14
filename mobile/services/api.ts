@@ -82,8 +82,19 @@ export async function fetchDietPlan() {
 }
 
 export async function createDietPlan(profile: Record<string, unknown>) {
-  return apiFetch<any>('/meal-plans', {
+  return apiFetch<any>('/meal-plans/today', {
     method: 'POST',
+    body: JSON.stringify(profile)
+  });
+}
+
+export async function fetchProfile() {
+  return apiFetch<any>('/profile');
+}
+
+export async function saveProfile(profile: Record<string, unknown>) {
+  return apiFetch<any>('/profile', {
+    method: 'PUT',
     body: JSON.stringify(profile)
   });
 }

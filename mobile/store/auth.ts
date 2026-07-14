@@ -5,6 +5,7 @@ type AuthState = {
   token: string | null;
   phone: string;
   loading: boolean;
+  hydrated: boolean;
   error: string | null;
   hydrate: () => Promise<void>;
   setPhone: (phone: string) => void;
@@ -17,10 +18,11 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   token: null,
   phone: '+251',
   loading: false,
+  hydrated: false,
   error: null,
   hydrate: async () => {
     const token = await getToken();
-    set({ token });
+    set({ token, hydrated: true });
   },
   setPhone: (phone) => set({ phone, error: null }),
   sendOtp: async () => {

@@ -6,12 +6,13 @@ import { generateMealPlan } from '../services/mealPlanService.js';
 export const mealPlanRoutes = express.Router();
 mealPlanRoutes.use(requireAuth);
 
-mealPlanRoutes.post('/today', async (req, res, next) => {
+async function createTodayMealPlan(req, res, next) {
   try {
     const profileResult = await query(
       `SELECT app_private.decrypt_text(target_calories_encrypted)::int AS "targetCalories",
               app_private.decrypt_text(medical_conditions_encrypted)::jsonb AS "medicalConditions",
-              app_private.decrypt_text(allergies_encrypted)::jsonb AS allergies
+              app_private.decrypt_text(allergies_encrypted)::jsonb AS allergies,
+              COALESCE(app_private.decrypt_text(preferences_encrypted)::jsonb, '{}'::jsonb) AS preferences
          FROM user_profiles
         WHERE user_id = $1`,
       [req.user.id]
@@ -23,7 +24,8 @@ mealPlanRoutes.post('/today', async (req, res, next) => {
     const plan = await generateMealPlan({
       targetCalories: profile.targetCalories,
       allergies: profile.allergies,
-      medicalConditions: profile.medicalConditions
+      medicalConditions: profile.medicalConditions,
+      preferences: profile.preferences
     });
 
     const streakResult = await query(
@@ -46,6 +48,25 @@ mealPlanRoutes.post('/today', async (req, res, next) => {
     );
 
     res.json({ mealPlan: rows[0] });
+  } catch (error) {
+    next(error);
+  }
+}
+
+mealPlanRoutes.post('/today', createTodayMealPlan);
+
+mealPlanRoutes.get('/today', async (req, res, next) => {
+  try {
+    const { rows } = await query(
+      `SELECT id, plan_date, plan_json, streak_count
+         FROM meal_plans
+        WHERE user_id = $1 AND plan_date = current_date
+        LIMIT 1`,
+      [req.user.id]
+    );
+
+    if (rows[0]) return res.json({ mealPlan: rows[0] });
+    return createTodayMealPlan(req, res, next);
   } catch (error) {
     next(error);
   }

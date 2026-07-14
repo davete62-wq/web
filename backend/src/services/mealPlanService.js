@@ -1,12 +1,19 @@
 import { findFoodsForMealPlan } from './foodRepository.js';
 import { polishMealPlanWithLlm } from './llmMealPlanService.js';
 
-const mealRatios = {
+const defaultMealRatios = {
   breakfast: 0.25,
   lunch: 0.35,
   dinner: 0.3,
   snack: 0.1
 };
+
+function mealRatiosForCount(count) {
+  if (count <= 2) return { lunch: 0.52, dinner: 0.48 };
+  if (count === 3) return { breakfast: 0.28, lunch: 0.38, dinner: 0.34 };
+  if (count >= 5) return { breakfast: 0.22, lunch: 0.3, dinner: 0.28, snack: 0.1, eveningSnack: 0.1 };
+  return defaultMealRatios;
+}
 
 function pickClosest(foods, target, usedIds, preferredGroups) {
   const candidates = foods
@@ -48,24 +55,31 @@ function buildMeal(name, targetCalories, foods, usedIds, preferredGroups) {
   };
 }
 
-export async function generateMealPlan({ targetCalories, allergies, medicalConditions }) {
+export async function generateMealPlan({ targetCalories, allergies, medicalConditions, preferences = {} }) {
   const foods = await findFoodsForMealPlan({ targetCalories, allergies, medicalConditions });
   if (foods.length < 8) {
     throw new Error('Food data seed is too small to generate a compliant meal plan');
   }
 
   const usedIds = new Set();
+  const ratios = mealRatiosForCount(Number(preferences.mealsPerDay ?? 4));
   const meals = {
-    breakfast: buildMeal('Breakfast', targetCalories * mealRatios.breakfast, foods, usedIds, ['cereal', 'milk', 'egg']),
-    lunch: buildMeal('Lunch', targetCalories * mealRatios.lunch, foods, usedIds, ['pulse', 'meat', 'vegetable', 'cereal']),
-    dinner: buildMeal('Dinner', targetCalories * mealRatios.dinner, foods, usedIds, ['vegetable', 'pulse', 'meat', 'cereal']),
-    snack: buildMeal('Snack', targetCalories * mealRatios.snack, foods, usedIds, ['fruit', 'nut', 'milk'])
+    ...(ratios.breakfast ? { breakfast: buildMeal('Breakfast', targetCalories * ratios.breakfast, foods, usedIds, ['cereal', 'milk', 'egg']) } : {}),
+    ...(ratios.lunch ? { lunch: buildMeal('Lunch', targetCalories * ratios.lunch, foods, usedIds, ['pulse', 'meat', 'vegetable', 'cereal']) } : {}),
+    ...(ratios.dinner ? { dinner: buildMeal('Dinner', targetCalories * ratios.dinner, foods, usedIds, ['vegetable', 'pulse', 'meat', 'cereal']) } : {}),
+    ...(ratios.snack ? { snack: buildMeal('Snack', targetCalories * ratios.snack, foods, usedIds, ['fruit', 'nut', 'milk']) } : {}),
+    ...(ratios.eveningSnack ? { eveningSnack: buildMeal('Evening Snack', targetCalories * ratios.eveningSnack, foods, usedIds, ['fruit', 'nut', 'milk']) } : {})
   };
 
   const plan = {
     targetCalories,
     generatedAt: new Date().toISOString(),
     source: 'Ethiopian Food Composition Table 2025 food_data table',
+    preferences: {
+      mealsPerDay: Number(preferences.mealsPerDay ?? 4),
+      monthlyFoodBudgetEtb: preferences.monthlyFoodBudgetEtb ?? null,
+      waterGlassesPerDay: preferences.waterGlassesPerDay ?? null
+    },
     meals,
     dailyCalories: Object.values(meals).reduce((sum, meal) => sum + meal.calories, 0)
   };
